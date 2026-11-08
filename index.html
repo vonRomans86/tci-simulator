@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TCI Simulator and Tolerance of Laryngoscopy</title>
+<style>
+:root{
+  --bg:#f5f6f8;--card:#ffffff;--ink:#17212b;--muted:#5d6874;--line:#dfe4e9;--grid:#edf0f3;
+  --prop:#2458d6;--opi:#c2410c;--accent:#0f766e;--warn:#9a5b00;--warnbg:#fff6e3;
+  --z1:#fbe3e1;--z2:#fbf0d4;--z3:#dcf1e2;--z4:#bfe5cc;--btn:#eef1f4;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0e1317;--card:#161d23;--ink:#e5eaee;--muted:#98a4af;--line:#28323a;--grid:#1f282f;
+  --prop:#6f9dff;--opi:#ff9757;--accent:#46c8bb;--warn:#f2b558;--warnbg:#2a2113;
+  --z1:#3a2224;--z2:#38301d;--z3:#1d3326;--z4:#1f4a30;--btn:#222b33;}
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:1180px;margin:0 auto;padding:14px 12px 40px}
+h1{font-size:19px;margin:2px 0 2px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px;margin-bottom:12px}
+.disc{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:8px 11px;font-size:12.5px;margin-bottom:12px}
+.grid{display:grid;gap:12px}
+@media(min-width:900px){.grid.two{grid-template-columns:1fr 1fr}.grid.side{grid-template-columns:380px 1fr;align-items:start}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px}
+.card h2{font-size:14px;margin:0 0 9px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px;flex:1 1 90px;min-width:0}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:7px 8px;width:100%;min-width:0}
+input[type=checkbox]{width:auto}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-top:8px}
+button{font:inherit;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:9px;padding:7px 11px;cursor:pointer;touch-action:manipulation}
+button:active{transform:translateY(1px)}
+button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.on{outline:2px solid var(--accent);outline-offset:-2px}
+.meta{font-size:12px;color:var(--muted);margin-top:8px}
+.warns{margin-top:8px;font-size:12.5px;color:var(--warn)}
+.warns div{margin-top:2px}
+.tgt{display:flex;align-items:center;gap:6px;margin-top:10px}
+.tgt button{width:42px;height:40px;font-size:20px;padding:0}
+.tgt input{text-align:center;font-size:20px;font-weight:650;height:40px}
+.tgt .u{font-size:12px;color:var(--muted);min-width:44px}
+.read{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.read div{background:var(--bg);border-radius:9px;padding:6px 7px}
+.read b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
+.read span{font-size:11px;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:0;border-radius:0;flex:1;padding:7px 8px;background:var(--bg)}
+.seg button.on{background:var(--accent);color:#fff;outline:none}
+.bar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);padding:8px 0;margin:0 0 10px}
+.bar .card{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:9px 11px}
+.clock{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;min-width:96px}
+.big{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.big div{background:var(--bg);border-radius:10px;padding:8px 9px}
+.big b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.big span{font-size:11.5px;color:var(--muted)}
+canvas{width:100%;display:block}
+.cv{position:relative;width:100%}
+.leg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+.leg i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
+.leg i.d{border-top-style:dashed}
+.leg s{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:5px;text-decoration:none}
+table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:4px 6px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+details summary{cursor:pointer;font-weight:600;font-size:14px}
+.refs{font-size:12px;color:var(--muted)}
+.refs li{margin:3px 0}
+.note{font-size:12px;color:var(--muted);margin-top:6px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+  <h1>TCI Simulator</h1>
+  <div class="sub">Propofol and opioids with multiple PK models · probability of tolerance of laryngoscopy (PTOL)</div>
+  <div class="disc">Teaching and simulation tool. Concentrations are population predictions, not measurements: not for clinical decision-making.</div>
+
+  <div class="bar"><div class="card">
+    <div class="clock" id="clock">00:00</div>
+    <button class="pri" id="play">▶ Start</button>
+    <div class="seg" id="speed">
+      <button data-s="1">1×</button><button data-s="5">5×</button><button data-s="15" class="on">15×</button><button data-s="60">60×</button>
+    </div>
+    <button data-j="1" class="jump">+1′</button>
+    <button data-j="5" class="jump">+5′</button>
+    <button data-j="15" class="jump">+15′</button>
+    <button id="reset">Reset</button>
+  </div></div>
+
+  <div class="grid side">
+    <div class="grid">
+      <section class="card">
+        <h2>Patient</h2>
+        <div class="row">
+          <label class="f">Age (years)<input id="age" type="number" inputmode="decimal" value="45" min="1" max="100" step="1"></label>
+          <label class="f">Sex<select id="sex"><option value="M">M</option><option value="F">F</option></select></label>
+          <label class="f">Weight (kg)<input id="wt" type="number" inputmode="decimal" value="75" min="5" max="250" step="1"></label>
+          <label class="f">Height (cm)<input id="ht" type="number" inputmode="decimal" value="175" min="50" max="220" step="1"></label>
+        </div>
+        <div class="meta" id="ptmeta"></div>
+        <div class="row" style="margin-top:8px">
+          <label class="f">Max pump rate (mL/h)<input id="maxrate" type="number" inputmode="decimal" value="1200" min="50" max="2000" step="50"></label>
+        </div>
+        <div class="note">Changing the patient or a model restarts the simulation.</div>
+      </section>
+
+      <section class="card" id="card-h">
+        <h2><span class="dot" style="background:var(--prop)"></span>Hypnotic · Propofol</h2>
+        <div class="row">
+          <label class="f" style="flex-basis:100%">Model<select id="h-model"></select></label>
+          <label class="f">Target<div class="seg" id="h-mode"><button data-m="ce" class="on">Effect</button><button data-m="cp">Plasma</button></div></label>
+          <label class="f">Concentration<select id="h-conc"></select></label>
+        </div>
+        <label class="chk" id="h-opiwrap"><input type="checkbox" id="h-opi" checked> Opioids co-administered (Eleveld)</label>
+        <div class="tgt"><button data-d="-1" data-c="h">−</button><input id="h-tgt" type="number" inputmode="decimal" step="0.1" min="0"><button data-d="1" data-c="h">+</button><span class="u" id="h-u"></span></div>
+        <div class="read">
+          <div><span>Cp</span><b id="h-cp">0.00</b></div>
+          <div><span>Ce</span><b id="h-ce">0.00</b></div>
+          <div><span>mL/h</span><b id="h-rate">0</b></div>
+          <div><span id="h-doseu">mg</span><b id="h-dose">0</b></div>
+        </div>
+        <div class="warns" id="h-warn"></div>
+      </section>
+
+      <section class="card" id="card-o">
+        <h2><span class="dot" style="background:var(--opi)"></span>Opioid</h2>
+        <div class="row">
+          <label class="f" style="flex-basis:100%">Model<select id="o-model"></select></label>
+          <label class="f">Target<div class="seg" id="o-mode"><button data-m="ce" class="on">Effect</button><button data-m="cp">Plasma</button></div></label>
+          <label class="f">Concentration<select id="o-conc"></select></label>
+        </div>
+        <div class="tgt"><button data-d="-1" data-c="o">−</button><input id="o-tgt" type="number" inputmode="decimal" step="0.1" min="0"><button data-d="1" data-c="o">+</button><span class="u" id="o-u"></span></div>
+        <div class="read">
+          <div><span>Cp</span><b id="o-cp">0.00</b></div>
+          <div><span>Ce</span><b id="o-ce">0.00</b></div>
+          <div><span>mL/h</span><b id="o-rate">0</b></div>
+          <div><span id="o-doseu">µg</span><b id="o-dose">0</b></div>
+        </div>
+        <div class="warns" id="o-warn"></div>
+      </section>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Combined effect</h2>
+        <div class="big">
+          <div><span>PTOL laryngoscopy</span><b id="ptol">—</b></div>
+          <div><span id="bislab">Predicted BIS</span><b id="bis">—</b></div>
+          <div><span>Wake-up (prop. Ce &lt; <input id="wake" type="number" inputmode="decimal" value="1.5" step="0.1" min="0.1" style="width:52px;padding:1px 4px;font-size:11.5px">)</span><b id="wakeT">—</b></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Tolerance of laryngoscopy</h2>
+        <div class="row" style="margin-bottom:8px">
+          <div class="seg" id="imodel" style="flex:1">
+            <button data-i="bouillon" class="on">Bouillon 2004</button><button data-i="kern">Kern 2004</button>
+          </div>
+        </div>
+        <div class="cv"><canvas id="cIso"></canvas></div>
+        <div class="leg">
+          <span><s style="background:var(--z1)"></s>&lt;50%</span><span><s style="background:var(--z2)"></s>50–90%</span><span><s style="background:var(--z3)"></s>90–95%</span><span><s style="background:var(--z4)"></s>&gt;95%</span>
+          <span><i style="border-color:var(--ink)"></i>Ce trajectory</span>
+        </div>
+        <div class="note" id="isonote"></div>
+      </section>
+
+      <section class="card">
+        <h2><span class="dot" style="background:var(--prop)"></span>Propofol over time</h2>
+        <div class="cv"><canvas id="cH"></canvas></div>
+        <div class="leg"><span><i style="border-color:var(--prop)"></i>Ce</span><span><i class="d" style="border-color:var(--prop)"></i>Cp</span><span><i class="d" style="border-color:var(--muted)"></i>target</span><span><i style="border-color:var(--muted);opacity:.5"></i>mL/h (right axis)</span></div>
+      </section>
+
+      <section class="card">
+        <h2><span class="dot" style="background:var(--opi)"></span><span id="oTitle">Opioid over time</span></h2>
+        <div class="cv"><canvas id="cO"></canvas></div>
+        <div class="leg"><span><i style="border-color:var(--opi)"></i>Ce</span><span><i class="d" style="border-color:var(--opi)"></i>Cp</span><span><i class="d" style="border-color:var(--muted)"></i>target</span><span><i style="border-color:var(--muted);opacity:.5"></i>mL/h (right axis)</span></div>
+      </section>
+
+      <section class="card">
+        <details>
+          <summary>Model parameters for this patient</summary>
+          <div style="overflow-x:auto;margin-top:8px"><table id="ptab"></table></div>
+          <div class="note">Volumes in L, clearances in L/min, ke0 in min⁻¹. Algorithm: 2-s step; in effect-site mode the rate is the highest that keeps the predicted Ce at or below target over the next 20 minutes (Shafer–Gregg-type approach), capped by the maximum pump rate.</div>
+        </details>
+      </section>
+
+      <section class="card">
+        <details>
+          <summary>Model sources</summary>
+          <ul class="refs">
+            <li><b>Marsh</b>: Marsh B et al. Br J Anaesth 1991;67:41–8 (ke0 0.26/min, Diprifusor). <b>Modified Marsh</b>: ke0 1.2/min, Struys MMRF et al. Anesthesiology 2000;92:399–406.</li>
+            <li><b>Schnider</b>: Schnider TW et al. Anesthesiology 1998;88:1170–82 and 1999;90:1502–16. Lean body mass by James.</li>
+            <li><b>Eleveld propofol</b>: Eleveld DJ et al. Br J Anaesth 2018;120:942–59 (arterial samples, arterial ke0). FFM by Al-Sallami.</li>
+            <li><b>Paedfusor</b>: Absalom A et al. Br J Anaesth 2003;91:507–13. <b>Kataria</b>: Kataria BK et al. Anesthesiology 1994;80:104–22. Paediatric ke0 (0.91 and 0.41/min): Muñoz HR et al. Anesthesiology 2004;101:1269–74.</li>
+            <li><b>Minto</b>: Minto CF et al. Anesthesiology 1997;86:10–23. <b>Eleveld remifentanil</b>: Eleveld DJ et al. Anesthesiology 2017;126:1005–18.</li>
+            <li><b>Gepts</b> (sufentanil): Gepts E et al. Anesthesiology 1995;83:1194–204. <b>Maitre</b> (alfentanil): Maitre PO et al. Anesthesiology 1987;66:3–12.</li>
+            <li><b>PTOL Bouillon</b>: Bouillon TW et al. Anesthesiology 2004;100:1353–72; hierarchical model parameters as in Hannivoort LN et al. (Ce50 propofol 8.48 µg/mL, Ce50 remifentanil 1.16 ng/mL, γ 3.46), as used by van den Berg JP et al. J Clin Monit Comput 2021;35:815–25.</li>
+            <li><b>PTOL Kern</b>: Kern SE et al. Anesthesiology 2004;100:1373–81, Greco model (C50 propofol 5.6 µg/mL, C50 remifentanil 48.9 ng/mL, slope 2.2, α 33.2), as reported by Johnson KB et al. Anesth Analg 2010.</li>
+            <li><b>BIS</b>: Bouillon 2004 interaction model (C50 propofol 4.47 µg/mL, C50 remifentanil 19.3 ng/mL, γ 1.43, E0 97.4).</li>
+            <li>The response surfaces were estimated with propofol (Schnider) and remifentanil (Minto): with other PK models the Ce values are not directly equivalent.</li>
+          </ul>
+        </details>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const DT = 2/60;              // simulation step: 2 s, in minutes
+const HORIZON = 600;          // 600 steps = 20-min look-ahead for effect-site control
+const REC_EVERY = 5;          // record history every 10 s
+
+/* ---------- covariates ---------- */
+function james(sex, w, h){ return sex === 'M' ? 1.1*w - 128*(w/h)**2 : 1.07*w - 148*(w/h)**2; }
+function alSallami(sex, w, age, bmi){
+  return sex === 'M'
+    ? (0.88 + (1-0.88)/(1 + Math.pow(age/13.4, -12.7))) * (9270*w)/(6680 + 216*bmi)
+    : (1.11 + (1-1.11)/(1 + Math.pow(age/7.1, -1.1))) * (9270*w)/(8780 + 244*bmi);
+}
+const sig = (x, c, g) => Math.pow(x, g)/(Math.pow(c, g) + Math.pow(x, g));
+function fromK(V1, k, ke0){
+  return { V1, V2: V1*k.k12/k.k21, V3: V1*k.k13/k.k31, CL1: V1*k.k10, CL2: V1*k.k12, CL3: V1*k.k13, ke0 };
+}
+
+/* ---------- drugs ---------- */
+const DRUGS = {
+  propofol:     { label:'Propofol',     cu:'µg/mL', amt:'mg', concs:[10,20],     concU:'mg/mL', step:0.5,  def:4,    max:15 },
+  remifentanil: { label:'Remifentanil', cu:'ng/mL', amt:'µg', concs:[50,40,20,10], concU:'µg/mL', step:0.5,  def:3,    max:25 },
+  sufentanil:   { label:'Sufentanil',   cu:'ng/mL', amt:'µg', concs:[5,1],       concU:'µg/mL', step:0.05, def:0.3,  max:3 },
+  alfentanil:   { label:'Alfentanil',   cu:'ng/mL', amt:'µg', concs:[500,100],   concU:'µg/mL', step:10,   def:80,   max:600 }
+};
+
+/* ---------- PK models ---------- */
+const MODELS = {
+  marsh: { drug:'propofol', name:'Marsh (Diprifusor, ke0 0.26)',
+    build: p => fromK(0.228*p.w, {k10:0.119,k12:0.112,k13:0.0419,k21:0.055,k31:0.0033}, 0.26),
+    check: p => [p.age < 16 ? 'Adult model: in children use Paedfusor or Kataria.' : null,
+                 p.bmi > 35 ? 'Marsh scales everything to total body weight: it overestimates doses in obesity.' : null] },
+  marshmod: { drug:'propofol', name:'Modified Marsh (ke0 1.2)',
+    build: p => fromK(0.228*p.w, {k10:0.119,k12:0.112,k13:0.0419,k21:0.055,k31:0.0033}, 1.2),
+    check: p => [p.age < 16 ? 'Adult model.' : null,
+                 p.bmi > 35 ? 'Marsh scales everything to total body weight: it overestimates doses in obesity.' : null] },
+  schnider: { drug:'propofol', name:'Schnider',
+    build: p => ({ V1:4.27, V2:18.9 - 0.391*(p.age-53), V3:238,
+      CL1:1.89 + 0.0456*(p.w-77) - 0.0681*(p.lbm-59) + 0.0264*(p.h-177),
+      CL2:1.29 - 0.024*(p.age-53), CL3:0.836, ke0:0.456 }),
+    check: p => [p.age < 16 ? 'Adult model.' : null,
+                 p.bmi > 35 ? 'James lean body mass is unreliable at high BMI: Schnider can give paradoxical clearances. Consider Eleveld.' : null] },
+  eleveld: { drug:'propofol', name:'Eleveld 2018',
+    build: p => {
+      const AGEr=35, Wr=70, Hr=170;
+      const fag = x => Math.exp(x*(p.age-AGEr));
+      const fcen = x => sig(x, 33.5531248778544, 1);
+      const PMA = p.age*52 + 40, PMAr = AGEr*52 + 40;
+      const fCL = sig(PMA, 42.2760190602615, 9.0548452392807), fCLr = sig(PMAr, 42.2760190602615, 9.0548452392807);
+      const fQ3 = sig(PMA, 68.2767978846832, 1), fQ3r = sig(PMAr, 68.2767978846832, 1);
+      const ffm = alSallami(p.sex, p.w, p.age, p.bmi), ffmr = alSallami('M', Wr, AGEr, Wr/(Hr/100)**2);
+      const fop = x => p.opi ? Math.exp(x*p.age) : 1;
+      const V1 = 6.2830780766822 * fcen(p.w)/fcen(Wr);
+      const V2 = 25.5013145036879 * p.w/Wr * fag(-0.015633);
+      const V3 = 272.8166615043603 * ffm/ffmr * fop(-0.0138166);
+      const CL1 = (p.sex==='M' ? 1.7895836588902 : 2.1002218877899) * Math.pow(p.w/Wr, 0.75) * fCL/fCLr * fop(-0.00285709);
+      const CL2 = 1.7500983738779 * Math.pow(V2/25.5013145036879, 0.75) * (1 + 1.3042680471360*(1 - fQ3));
+      const CL3 = 1.1085424008536 * Math.pow(V3/272.8166615043603, 0.75) * fQ3/fQ3r;
+      return { V1, V2, V3, CL1, CL2, CL3, ke0: 0.146*Math.pow(p.w/70, -0.25) };
+    },
+    check: p => [] },
+  paedfusor: { drug:'propofol', name:'Paedfusor (paediatric, ke0 0.91)',
+    build: p => {
+      let V1k = 0.4584, k10 = 0.1527*Math.pow(p.w, -0.3);
+      const a = Math.floor(p.age);
+      if (a === 13){ V1k = 0.400; k10 = 0.0678; }
+      else if (a === 14){ V1k = 0.342; k10 = 0.0792; }
+      else if (a === 15){ V1k = 0.284; k10 = 0.0954; }
+      else if (a >= 16){ V1k = 0.22857; k10 = 0.119; }
+      return fromK(V1k*p.w, {k10, k12:0.114, k13:0.0419, k21:0.055, k31:0.0033}, 0.91);
+    },
+    check: p => [p.age < 1 || p.w < 5 ? 'Paedfusor: validated from 1 year and 5 kg.' : null,
+                 p.age > 16 ? 'Paedfusor: above 16 years use an adult model.' : null,
+                 'Paediatric ke0 from Muñoz (0.91/min): Paedfusor was originally used in plasma mode.'] },
+  kataria: { drug:'propofol', name:'Kataria (paediatric, ke0 0.41)',
+    build: p => ({ V1:0.52*p.w, V2:1.0*p.w, V3:8.2*p.w, CL1:0.034*p.w, CL2:0.058*p.w, CL3:0.026*p.w, ke0:0.41 }),
+    check: p => [p.age < 3 || p.age > 16 ? 'Kataria: derived in children aged 3–11 (clinical use up to 16).' : null,
+                 'Paediatric ke0 from Muñoz (0.41/min).'] },
+
+  minto: { drug:'remifentanil', name:'Remifentanil · Minto',
+    build: p => ({ V1:5.1 - 0.0201*(p.age-40) + 0.072*(p.lbm-55), V2:9.82 - 0.0811*(p.age-40) + 0.108*(p.lbm-55), V3:5.42,
+      CL1:2.6 - 0.0162*(p.age-40) + 0.0191*(p.lbm-55), CL2:2.05 - 0.0301*(p.age-40), CL3:0.076 - 0.00113*(p.age-40),
+      ke0:0.595 - 0.007*(p.age-40) }),
+    check: p => [p.age < 12 ? 'Minto: adult model.' : null,
+                 p.bmi > 35 ? 'James lean body mass is unreliable at high BMI: consider Eleveld.' : null] },
+  eleveldR: { drug:'remifentanil', name:'Remifentanil · Eleveld 2017',
+    build: p => {
+      const fag = x => Math.exp(x*(p.age-35));
+      const SIZE = alSallami(p.sex, p.w, p.age, p.bmi) / alSallami('M', 70, 35, 70/1.7**2);
+      const KMAT = sig(p.w, 2.88, 2), KMATr = sig(70, 2.88, 2);
+      const KSEX = p.sex === 'M' ? 1 : 1 + 0.470*sig(p.age, 12, 6)*(1 - sig(p.age, 45, 6));
+      const V1 = 5.81*SIZE*fag(-0.00554);
+      const V2 = 8.82*SIZE*fag(-0.00327)*KSEX;
+      const V3 = 5.03*SIZE*fag(-0.0315)*Math.exp(-0.0260*(p.w-70));
+      const CL1 = 2.58*Math.pow(SIZE,0.75)*(KMAT/KMATr)*KSEX*fag(-0.00327);
+      const CL2 = 1.72*Math.pow(V2/8.82,0.75)*fag(-0.00554)*KSEX;
+      const CL3 = 0.124*Math.pow(V3/5.03,0.75)*fag(-0.00554);
+      return { V1, V2, V3, CL1, CL2, CL3, ke0: 1.09*fag(-0.0289) };
+    },
+    check: p => [] },
+  gepts: { drug:'sufentanil', name:'Sufentanil · Gepts',
+    build: p => fromK(14.3, {k10:0.0645,k12:0.1086,k13:0.0229,k21:0.0245,k31:0.0013}, 0.112),
+    check: p => [p.age < 18 ? 'Gepts: adult model.' : null,
+                 'PTOL not available: the response surfaces apply to remifentanil only.'] },
+  maitre: { drug:'alfentanil', name:'Alfentanil · Maitre',
+    build: p => {
+      const V1 = 0.111*p.w*(p.sex === 'F' ? 1.15 : 1);
+      const CL = p.age <= 40 ? 0.356 : 0.356 - 0.00269*(p.age-40);
+      const k31 = p.age <= 40 ? 0.0126 : 0.0126 - 0.000113*(p.age-40);
+      return fromK(V1, {k10:CL/V1, k12:0.104, k13:0.017, k21:0.0673, k31}, 0.77);
+    },
+    check: p => [p.age < 18 ? 'Maitre: adult model.' : null,
+                 'PTOL not available: the response surfaces apply to remifentanil only.'] }
+};
+const H_MODELS = ['eleveld','schnider','marsh','marshmod','paedfusor','kataria'];
+const O_MODELS = ['minto','eleveldR','gepts','maitre'];
+
+/* ---------- linear algebra ---------- */
+function matMul(A, B){
+  const n = A.length, m = B[0].length, q = B.length, C = [];
+  for (let i=0;i<n;i++){ const r = new Array(m).fill(0);
+    for (let k=0;k<q;k++){ const a = A[i][k]; if (a) for (let j=0;j<m;j++) r[j] += a*B[k][j]; }
+    C.push(r); }
+  return C;
+}
+function expm(M){
+  const n = M.length;
+  let nrm = 0; for (const r of M){ nrm = Math.max(nrm, r.reduce((s,v)=>s+Math.abs(v),0)); }
+  const s = Math.max(0, Math.ceil(Math.log2(nrm || 1)) + 2);
+  const A = M.map(r => r.map(v => v/Math.pow(2,s)));
+  const I = () => Array.from({length:n}, (_,i) => Array.from({length:n}, (_,j) => i===j ? 1 : 0));
+  let R = I(), T = I();
+  for (let k=1;k<=20;k++){ T = matMul(T, A).map(r => r.map(v => v/k)); R = R.map((r,i) => r.map((v,j) => v + T[i][j])); }
+  for (let i=0;i<s;i++) R = matMul(R, R);
+  return R;
+}
+
+/* ---------- infusion channel ---------- */
+class Channel {
+  constructor(prefix){ this.prefix = prefix; this.mode = 'ce'; }
+  setup(modelKey, pt){
+    this.key = modelKey; this.m = MODELS[modelKey]; this.drug = DRUGS[this.m.drug];
+    const P = this.m.build(pt); this.P = P;
+    const {V1,V2,V3,CL1,CL2,CL3,ke0} = P;
+    const k10=CL1/V1, k12=CL2/V1, k13=CL3/V1, k21=CL2/V2, k31=CL3/V3;
+    const A = [
+      [-(k10+k12+k13), k21, k31, 0, 1],
+      [k12, -k21, 0, 0, 0],
+      [k13, 0, -k31, 0, 0],
+      [ke0/V1, 0, 0, -ke0, 0],
+      [0,0,0,0,0]
+    ].map(r => r.map(v => v*DT));
+    const E5 = expm(A);
+    this.E = E5.slice(0,4).map(r => r.slice(0,4));
+    this.G = E5.slice(0,4).map(r => r[4]);
+    // effect-site response to 1 unit/min for one step, then stop
+    this.unitCe = new Float64Array(HORIZON);
+    let y = this.G.slice();
+    for (let k=0;k<HORIZON;k++){ this.unitCe[k] = y[3]; y = this.mv(y); }
+    this.valid = [V1,V2,V3,CL1,CL2,CL3,ke0].every(v => isFinite(v) && v > 0);
+    this.reset();
+  }
+  mv(x){ const E = this.E; return [0,1,2,3].map(i => E[i][0]*x[0] + E[i][1]*x[1] + E[i][2]*x[2] + E[i][3]*x[3]); }
+  reset(){ this.x = [0,0,0,0]; this.amount = 0; this.rate = 0; this.hist = []; this.lastAmt = 0; this.lastT = 0; this.avgMlh = 0; }
+  get cp(){ return this.x[0]/this.P.V1; }
+  get ce(){ return this.x[3]; }
+  step(target, conc, maxMlh){
+    if (!this.valid){ this.rate = 0; return; }
+    const rmax = maxMlh/60*conc;          // amount/min
+    let r = 0;
+    if (target > 0){
+      if (this.mode === 'cp'){
+        const free = this.mv(this.x)[0]/this.P.V1, unit = this.G[0]/this.P.V1;
+        r = (target - free)/unit;
+      } else {
+        r = Infinity; let y = this.x;
+        for (let k=0;k<HORIZON;k++){
+          y = this.mv(y); const u = this.unitCe[k];
+          if (u > 1e-12){ const v = (target - y[3])/u; if (v < r) r = v; }
+        }
+      }
+    }
+    r = Math.min(Math.max(r, 0), rmax);
+    const nx = this.mv(this.x);
+    for (let i=0;i<4;i++) nx[i] += this.G[i]*r;
+    this.x = nx; this.rate = r; this.amount += r*DT;
+  }
+  timeToCe(thr){
+    if (this.ce <= thr) return 0;
+    let y = this.x;
+    for (let k=1;k<=18000;k++){ y = this.mv(y); if (y[3] <= thr) return k*DT; }
+    return Infinity;
+  }
+}
+
+/* ---------- interaction ---------- */
+const PTOL = {
+  bouillon: {
+    p: (cp,cr) => { const post = 1.16/(1.16+cr), a = Math.pow(cp,3.46); return a/(a + Math.pow(8.48*post,3.46)); },
+    iso: (P,cr) => 8.48*1.16/(1.16+cr)*Math.pow(P/(1-P), 1/3.46)
+  },
+  kern: {
+    p: (cp,cr) => { const up=cp/5.6, ur=cr/48.9, U = up+ur+33.2*up*ur, a = Math.pow(U,2.2); return a/(1+a); },
+    iso: (P,cr) => { const Us = Math.pow(P/(1-P), 1/2.2), ur = cr/48.9; return Math.max(0, 5.6*(Us-ur)/(1+33.2*ur)); }
+  }
+};
+function bisBouillon(cp, cr){ const U = cp/4.47 + cr/19.3, a = Math.pow(U,1.43); return 97.4 - 97.4*a/(1+a); }
+
+/* ---------- state ---------- */
+const H = new Channel('h'), O = new Channel('o');
+let pt = {}, t = 0, nstep = 0, running = false, speed = 15, imodel = 'bouillon', acc = 0, last = 0, dirty = true;
+const targets = { h: 0, o: 0 };
+
+function readPatient(){
+  const age = +$('age').value || 45, sex = $('sex').value, w = +$('wt').value || 70, h = +$('ht').value || 170;
+  const bmi = w/(h/100)**2;
+  pt = { age, sex, w, h, bmi, lbm: james(sex, w, h), opi: $('h-opi').checked };
+  pt.ffm = alSallami(sex, w, age, bmi);
+  $('ptmeta').textContent = `BMI ${bmi.toFixed(1)} · lean body mass (James) ${pt.lbm.toFixed(1)} kg · FFM (Al-Sallami) ${pt.ffm.toFixed(1)} kg`;
+}
+function fillSelect(sel, keys){ sel.innerHTML = keys.map(k => `<option value="${k}">${MODELS[k].name}</option>`).join(''); }
+function fillConc(ch){
+  const sel = $(ch.prefix+'-conc'); const prev = sel.value;
+  sel.innerHTML = ch.drug.concs.map(c => `<option value="${c}">${c} ${ch.drug.concU}</option>`).join('');
+  if (ch.drug.concs.map(String).includes(prev)) sel.value = prev;
+}
+function rebuild(){
+  readPatient();
+  const hk = $('h-model').value, ok = $('o-model').value;
+  const prevODrug = O.drug;
+  H.setup(hk, pt); O.setup(ok, pt);
+  fillConc(H); fillConc(O);
+  if (prevODrug !== O.drug){ targets.o = O.drug.def; $('o-tgt').value = targets.o; $('o-tgt').step = O.drug.step; }
+  $('h-u').textContent = H.drug.cu; $('o-u').textContent = O.drug.cu;
+  $('h-doseu').textContent = H.drug.amt; $('o-doseu').textContent = O.drug.amt;
+  $('h-opiwrap').classList.toggle('hidden', hk !== 'eleveld');
+  $('oTitle').textContent = O.drug.label + ' over time';
+  for (const [ch, el] of [[H,'h-warn'],[O,'o-warn']]){
+    const w = ch.m.check(pt).filter(Boolean);
+    if (!ch.valid) w.unshift('Invalid parameters for this patient (volume or clearance ≤ 0): model outside its covariate range.');
+    $(el).innerHTML = w.map(s => `<div>⚠︎ ${s}</div>`).join('');
+  }
+  t = 0; nstep = 0; acc = 0; record(); renderTable(); dirty = true;
+}
+function record(){
+  for (const ch of [H,O]){
+    // mean rate over the last interval: keeps short boluses visible and smooths controller chatter
+    ch.avgMlh = t > ch.lastT ? (ch.amount - ch.lastAmt)/(t - ch.lastT)*60/concOf(ch) : 0;
+    ch.lastAmt = ch.amount; ch.lastT = t;
+    ch.hist.push([t, ch.cp, ch.ce, ch.avgMlh, targets[ch.prefix]]);
+  }
+}
+function concOf(ch){ return +$(ch.prefix+'-conc').value || ch.drug.concs[0]; }
+function simStep(){
+  H.step(targets.h, concOf(H), +$('maxrate').value || 1200);
+  O.step(targets.o, concOf(O), +$('maxrate').value || 1200);
+  t += DT; nstep++;
+  if (nstep % REC_EVERY === 0) record();
+  dirty = true;
+}
+
+/* ---------- UI ---------- */
+function fmtTime(min){
+  const s = Math.round(min*60), h = Math.floor(s/3600), m = Math.floor(s%3600/60), ss = s%60;
+  return (h ? h+':' : '') + String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+}
+function fmtC(v, drug){ const d = drug.step < 0.1 ? 3 : (drug.def >= 50 ? 0 : 2); return v.toFixed(d); }
+function updateReadouts(){
+  $('clock').textContent = fmtTime(t);
+  for (const ch of [H,O]){
+    const p = ch.prefix;
+    $(p+'-cp').textContent = fmtC(ch.cp, ch.drug);
+    $(p+'-ce').textContent = fmtC(ch.ce, ch.drug);
+    $(p+'-rate').textContent = ch.avgMlh.toFixed(0);
+    $(p+'-dose').textContent = ch.amount >= 100 ? ch.amount.toFixed(0) : ch.amount.toFixed(1);
+  }
+  const isRemi = O.m.drug === 'remifentanil';
+  if (isRemi){
+    const v = PTOL[imodel].p(H.ce, O.ce)*100;
+    $('ptol').textContent = (v < 1 ? '<1' : v > 99 ? '>99' : v.toFixed(0)) + '%';
+  } else $('ptol').textContent = 'n/a';
+  $('bislab').textContent = isRemi ? 'Predicted BIS' : 'Predicted BIS (propofol only)';
+  $('bis').textContent = bisBouillon(H.ce, isRemi ? O.ce : 0).toFixed(0);
+  const tw = H.timeToCe(+$('wake').value || 1.5);
+  $('wakeT').textContent = tw === 0 ? 'below threshold' : isFinite(tw) ? fmtTime(tw) : '> 10 h';
+  $('isonote').textContent = isRemi ? '' : 'PTOL surfaces are defined only for propofol + remifentanil: select a remifentanil model.';
+}
+function renderTable(){
+  const rows = [['V1','V1'],['V2','V2'],['V3','V3'],['CL1','CL1'],['CL2','CL2'],['CL3','CL3'],['ke0','ke0']];
+  let h = `<tr><th></th><th>${H.m.name}</th><th>${O.m.name}</th></tr>`;
+  for (const [lab,k] of rows) h += `<tr><td>${lab}</td><td>${H.P[k].toFixed(k==='ke0'?3:3)}</td><td>${O.P[k].toFixed(3)}</td></tr>`;
+  const t12 = ch => (Math.log(2)/ch.P.ke0).toFixed(2);
+  h += `<tr><td>t½ke0 (min)</td><td>${t12(H)}</td><td>${t12(O)}</td></tr>`;
+  $('ptab').innerHTML = h;
+}
+
+/* ---------- charts ---------- */
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function prep(cv, hpx){
+  const dpr = window.devicePixelRatio || 1, w = cv.parentElement.clientWidth;
+  if (cv.width !== Math.round(w*dpr) || cv.height !== Math.round(hpx*dpr)){
+    cv.width = Math.round(w*dpr); cv.height = Math.round(hpx*dpr); cv.style.height = hpx+'px';
+  }
+  const g = cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,hpx);
+  return { g, w, h: hpx };
+}
+function niceAxis(v){ if (!(v > 0)) v = 1; const st = v/4, e = Math.pow(10, Math.floor(Math.log10(st))), f = st/e; const step = (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*e; return { max: Math.ceil(v/step - 1e-9)*step, step }; }
+function drawTime(cv, ch, color){
+  const {g, w, h} = prep(cv, 210);
+  const L = 40, R = 40, T = 10, B = 24, pw = w-L-R, ph = h-T-B;
+  const hs = ch.hist;
+  const tmax = Math.max(20, Math.ceil(t/10)*10);
+  let cmax = targets[ch.prefix]*1.25;
+  let rmaxv = 0;
+  for (const r of hs){ cmax = Math.max(cmax, r[1], r[2], r[4]); rmaxv = Math.max(rmaxv, r[3]); }
+  const ca = niceAxis(cmax || ch.drug.def), ra = niceAxis(rmaxv || 10); cmax = ca.max; rmaxv = ra.max;
+  const X = v => L + v/tmax*pw, Y = v => T + ph - v/cmax*ph, Yr = v => T + ph - v/rmaxv*ph;
+  g.font = '11px -apple-system,system-ui,sans-serif'; g.fillStyle = css('--muted'); g.strokeStyle = css('--grid'); g.lineWidth = 1;
+  for (let v=0; v<=cmax+1e-9; v+=ca.step){ const y = Y(v); g.beginPath(); g.moveTo(L,y); g.lineTo(L+pw,y); g.stroke();
+    g.textAlign='right'; g.fillText(fmtNum(v), L-5, y+4); }
+  g.textAlign='left';
+  for (let v=0; v<=rmaxv+1e-9; v+=ra.step) g.fillText(fmtNum(v), L+pw+5, Yr(v)+4);
+  const tstep = tmax <= 30 ? 5 : tmax <= 60 ? 10 : tmax <= 180 ? 30 : 60;
+  g.textAlign='center';
+  for (let v=0; v<=tmax; v+=tstep){ const x = X(v); g.beginPath(); g.moveTo(x,T); g.lineTo(x,T+ph); g.stroke(); g.fillText(v+'′', x, h-7); }
+  if (hs.length < 1) return;
+  const line = (idx, col, dash, scale, alpha) => {
+    g.save(); g.globalAlpha = alpha || 1; g.strokeStyle = col; g.lineWidth = 2; g.setLineDash(dash || []);
+    g.beginPath(); hs.forEach((r,i) => { const x = X(r[0]), y = (scale || Y)(r[idx]); i ? g.lineTo(x,y) : g.moveTo(x,y); }); g.stroke(); g.restore();
+  };
+  // stepped infusion rate
+  g.save(); g.globalAlpha = .35; g.strokeStyle = css('--muted'); g.lineWidth = 1.5; g.beginPath();
+  hs.forEach((r,i) => { if (i){ g.lineTo(X(hs[i-1][0]), Yr(r[3])); g.lineTo(X(r[0]), Yr(r[3])); } else g.moveTo(X(r[0]), Yr(0)); }); g.stroke(); g.restore();
+  line(4, css('--muted'), [3,4], null, .8);
+  line(1, color, [5,4]);
+  line(2, color);
+}
+function fmtNum(v){ return +v.toFixed(2) + ''; }
+function drawIso(){
+  const cv = $('cIso'); const W = cv.parentElement.clientWidth;
+  const {g, w, h} = prep(cv, Math.min(380, Math.max(260, W*0.72)));
+  const L = 42, R = 12, T = 10, B = 34, pw = w-L-R, ph = h-T-B;
+  const xmax = 10, ymax = 10;
+  const X = v => L + Math.min(v,xmax)/xmax*pw, Y = v => T + ph - Math.min(v,ymax)/ymax*ph;
+  g.save(); g.beginPath(); g.rect(L,T,pw,ph); g.clip();
+  g.fillStyle = css('--z1'); g.fillRect(L,T,pw,ph);
+  const model = PTOL[imodel];
+  const zones = [[0.5,'--z2'],[0.9,'--z3'],[0.95,'--z4']];
+  for (const [P, z] of zones){
+    g.fillStyle = css(z); g.beginPath();
+    for (let i=0;i<=200;i++){ const cr = ymax*i/200, cp = model.iso(P, cr); i ? g.lineTo(L + cp/xmax*pw, Y(cr)) : g.moveTo(L + cp/xmax*pw, Y(cr)); }
+    g.lineTo(L+pw+50, Y(ymax)); g.lineTo(L+pw+50, Y(0)); g.closePath(); g.fill();
+  }
+  g.strokeStyle = css('--muted'); g.lineWidth = 1;
+  for (const [P] of zones){
+    g.beginPath();
+    for (let i=0;i<=200;i++){ const cr = ymax*i/200, cp = model.iso(P, cr); i ? g.lineTo(L + cp/xmax*pw, Y(cr)) : g.moveTo(L + cp/xmax*pw, Y(cr)); }
+    g.stroke();
+  }
+  g.restore();
+  // axes
+  g.font = '11px -apple-system,system-ui,sans-serif'; g.fillStyle = css('--muted'); g.strokeStyle = css('--line');
+  g.strokeRect(L,T,pw,ph);
+  g.textAlign = 'center';
+  for (let v=0; v<=xmax; v+=2) g.fillText(v, X(v), T+ph+14);
+  g.fillText('Propofol Ce (µg/mL)', L+pw/2, h-4);
+  g.textAlign = 'right';
+  for (let v=0; v<=ymax; v+=2) g.fillText(v, L-5, Y(v)+4);
+  g.save(); g.translate(11, T+ph/2); g.rotate(-Math.PI/2); g.textAlign='center'; g.fillText('Remifentanil Ce (ng/mL)', 0, 0); g.restore();
+  // isobole labels
+  g.fillStyle = css('--ink'); g.textAlign = 'left'; g.font = '600 11px -apple-system,system-ui,sans-serif';
+  zones.forEach(([P], i) => { const labY = ymax*(0.9 - 0.14*i), cp = model.iso(P, labY); if (cp < xmax-0.6) g.fillText(Math.round(P*100)+'%', X(cp)+4, Y(labY)-3); });
+  if (O.m.drug !== 'remifentanil') return;
+  // trajectory
+  const hh = H.hist, oh = O.hist, n = Math.min(hh.length, oh.length);
+  g.strokeStyle = css('--ink'); g.lineWidth = 1.8; g.beginPath();
+  for (let i=0;i<n;i++){ const x = X(hh[i][2]), y = Y(oh[i][2]); i ? g.lineTo(x,y) : g.moveTo(x,y); }
+  g.lineTo(X(H.ce), Y(O.ce)); g.stroke();
+  // target
+  g.strokeStyle = css('--accent'); g.lineWidth = 2;
+  const tx = X(targets.h), ty = Y(targets.o);
+  g.beginPath(); g.moveTo(tx-6,ty); g.lineTo(tx+6,ty); g.moveTo(tx,ty-6); g.lineTo(tx,ty+6); g.stroke();
+  // current point
+  g.fillStyle = css('--ink'); g.beginPath(); g.arc(X(H.ce), Y(O.ce), 5, 0, Math.PI*2); g.fill();
+  g.strokeStyle = css('--card'); g.lineWidth = 2; g.stroke();
+}
+function drawAll(){
+  updateReadouts();
+  drawTime($('cH'), H, css('--prop'));
+  drawTime($('cO'), O, css('--opi'));
+  drawIso();
+}
+
+/* ---------- loop ---------- */
+function loop(ts){
+  if (running){
+    if (last) acc += (ts-last)/1000*speed/60; // simulated minutes
+    let guard = 0;
+    while (acc >= DT && guard < 400){ simStep(); acc -= DT; guard++; }
+  }
+  last = ts;
+  if (dirty){ drawAll(); dirty = false; }
+  requestAnimationFrame(loop);
+}
+
+/* ---------- events ---------- */
+function setTarget(p, v){
+  const ch = p === 'h' ? H : O;
+  v = Math.max(0, Math.min(ch.drug.max, +v || 0));
+  v = Math.round(v*1000)/1000;
+  targets[p] = v; $(p+'-tgt').value = v; dirty = true;
+}
+document.querySelectorAll('.tgt button').forEach(b => b.addEventListener('click', () => {
+  const p = b.dataset.c, ch = p === 'h' ? H : O;
+  setTarget(p, targets[p] + (+b.dataset.d)*ch.drug.step);
+}));
+['h','o'].forEach(p => {
+  $(p+'-tgt').addEventListener('change', e => setTarget(p, e.target.value));
+  $(p+'-mode').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    $(p+'-mode').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    (p === 'h' ? H : O).mode = b.dataset.m;
+  }));
+  $(p+'-conc').addEventListener('change', () => { dirty = true; });
+});
+['age','sex','wt','ht','h-model','o-model','h-opi'].forEach(id => $(id).addEventListener('change', () => {
+  if (id === 'h-model'){ const hk = $('h-model').value; if (hk === 'paedfusor'){ setMode('h','cp'); } }
+  rebuild();
+}));
+function setMode(p, m){ $(p+'-mode').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.m === m)); (p==='h'?H:O).mode = m; }
+$('play').addEventListener('click', () => {
+  running = !running; last = 0;
+  $('play').textContent = running ? '❚❚ Pause' : '▶ Start';
+});
+$('reset').addEventListener('click', () => { running = false; $('play').textContent = '▶ Start'; rebuild(); });
+$('speed').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+  speed = +b.dataset.s; $('speed').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+}));
+document.querySelectorAll('.jump').forEach(b => b.addEventListener('click', () => {
+  const n = Math.round(+b.dataset.j/DT); for (let i=0;i<n;i++) simStep();
+}));
+$('imodel').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+  imodel = b.dataset.i; $('imodel').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); dirty = true;
+}));
+$('wake').addEventListener('change', () => { dirty = true; });
+$('maxrate').addEventListener('change', () => { dirty = true; });
+window.addEventListener('resize', () => { dirty = true; });
+if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { dirty = true; });
+
+/* ---------- start ---------- */
+fillSelect($('h-model'), H_MODELS); fillSelect($('o-model'), O_MODELS);
+targets.h = DRUGS.propofol.def; targets.o = DRUGS.remifentanil.def;
+$('h-tgt').value = targets.h; $('o-tgt').value = targets.o;
+$('h-tgt').step = DRUGS.propofol.step; $('o-tgt').step = DRUGS.remifentanil.step;
+rebuild();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
