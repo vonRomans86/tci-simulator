@@ -2,7 +2,14 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "TCI Simulator: multi-model target-controlled infusion simulator with tolerance-of-laryngoscopy isoboles"
 version: 1.0.0
-doi: 10.5281/zenodo.24058642
+doi: 10.5281/zenodo.24058641
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.24058641
+    description: "Concept DOI, all versions"
+  - type: doi
+    value: 10.5281/zenodo.24058642
+    description: "Version 1.0.0"
 date-released: 2026-11-08
 license: MIT
 repository-code: "https://github.com/vonRomans86/tci-simulator"

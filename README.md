@@ -1,6 +1,6 @@
 # TCI Simulator
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24058642.svg)](https://doi.org/10.5281/zenodo.24058642) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24058641.svg)](https://doi.org/10.5281/zenodo.24058641) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A browser-based target-controlled infusion (TCI) simulator for propofol and opioids, with a live display of the probability of tolerance of laryngoscopy (PTOL).
 
@@ -66,7 +66,9 @@ Propofol (Schnider, Marsh, Eleveld) and remifentanil (Minto, Eleveld) parameters
 
 ## How to cite
 
-Romanelli A. *TCI Simulator: multi-model target-controlled infusion simulator with tolerance-of-laryngoscopy isoboles* (v1.0.0). Zenodo; 2026. https://doi.org/10.5281/zenodo.24058642
+Romanelli A. *TCI Simulator: multi-model target-controlled infusion simulator with tolerance-of-laryngoscopy isoboles* Zenodo; 2026. https://doi.org/10.5281/zenodo.24058641
+
+This DOI always resolves to the latest version. To cite v1.0.0 specifically, use https://doi.org/10.5281/zenodo.24058642.
 
 GitHub's **Cite this repository** button gives the same reference in APA and BibTeX.
 
