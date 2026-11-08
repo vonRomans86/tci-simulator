@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "TCI Simulator: multi-model target-controlled infusion simulator with tolerance-of-laryngoscopy isoboles"
+version: 1.0.0
+date-released: 2026-11-08
+license: MIT
+repository-code: "https://github.com/vonRomans86/tci-simulator"
+url: "https://vonromans86.github.io/tci-simulator/"
+type: software
+authors:
+  - family-names: Romanelli
+    given-names: Antonio
+    affiliation: "AOU San Giovanni di Dio e Ruggi d'Aragona, Salerno, Italy"
+keywords:
+  - anesthesia
+  - target-controlled infusion
+  - pharmacokinetics
+  - pharmacodynamics
+  - propofol
+  - remifentanil
+  - fentanyl
+  - response surface
+  - medical education
+abstract: >-
+  Browser-based target-controlled infusion (TCI) simulator for propofol,
+  remifentanil, fentanyl, sufentanil and alfentanil, implementing the Eleveld,
+  Schnider, Marsh, Paedfusor, Kataria, Minto, Shafer, Scott-Stanski, Gepts and
+  Maitre models, with effect-site or plasma targeting, live
+  tolerance-of-laryngoscopy isoboles (Bouillon 2004, Kern 2004), predicted BIS
+  and CSV export at 0.5-s resolution. Teaching and simulation tool only, not
+  for clinical use.
