@@ -194,7 +194,7 @@ details summary{cursor:pointer;font-weight:600;font-size:14px}
         <details>
           <summary>Model sources</summary>
           <ul class="refs">
-            <li><b>Marsh</b>: Marsh B et al. Br J Anaesth 1991;67:41–8 (ke0 0.26/min, Diprifusor). <b>Modified Marsh</b>: ke0 1.2/min, Struys MMRF et al. Anesthesiology 2000;92:399–406.</li>
+            <li><b>Marsh</b>: Marsh B et al. Br J Anaesth 1991;67:41–8 (ke0 0.26/min, Diprifusor). <b>Modified Marsh</b>: ke0 1.21/min, Struys MMRF et al. Anesthesiology 2000;92:399–406.</li>
             <li><b>Schnider</b>: Schnider TW et al. Anesthesiology 1998;88:1170–82 and 1999;90:1502–16. Lean body mass by James.</li>
             <li><b>Eleveld propofol</b>: Eleveld DJ et al. Br J Anaesth 2018;120:942–59 (arterial samples, arterial ke0). FFM by Al-Sallami.</li>
             <li><b>Paedfusor</b>: Absalom A et al. Br J Anaesth 2003;91:507–13. <b>Kataria</b>: Kataria BK et al. Anesthesiology 1994;80:104–22. Paediatric ke0 (0.91 and 0.41/min): Muñoz HR et al. Anesthesiology 2004;101:1269–74.</li>
@@ -248,8 +248,8 @@ const MODELS = {
     build: p => fromK(0.228*p.w, {k10:0.119,k12:0.112,k13:0.0419,k21:0.055,k31:0.0033}, 0.26),
     check: p => [p.age < 16 ? 'Adult model: in children use Paedfusor or Kataria.' : null,
                  p.bmi > 35 ? 'Marsh scales everything to total body weight: it overestimates doses in obesity.' : null] },
-  marshmod: { drug:'propofol', name:'Modified Marsh (ke0 1.2)',
-    build: p => fromK(0.228*p.w, {k10:0.119,k12:0.112,k13:0.0419,k21:0.055,k31:0.0033}, 1.2),
+  marshmod: { drug:'propofol', name:'Modified Marsh (ke0 1.21)',
+    build: p => fromK(0.228*p.w, {k10:0.119,k12:0.112,k13:0.0419,k21:0.055,k31:0.0033}, 1.21),
     check: p => [p.age < 16 ? 'Adult model.' : null,
                  p.bmi > 35 ? 'Marsh scales everything to total body weight: it overestimates doses in obesity.' : null] },
   schnider: { drug:'propofol', name:'Schnider',
@@ -317,7 +317,7 @@ const MODELS = {
     },
     check: p => [] },
   shaferF: { drug:'fentanyl', name:'Fentanyl · Shafer 1990 (ke0 Scott–Stanski)',
-    build: p => fromK(6.09, {k10:0.083,k12:0.471,k13:0.225,k21:0.102,k31:0.006}, 0.147),
+    build: p => fromK(6.09, {k10:0.0827,k12:0.471,k13:0.225,k21:0.102,k31:0.006}, 0.147),
     check: p => [p.age < 18 ? 'Shafer: adult model.' : null,
                  p.w < 40 || p.w > 90 ? 'Shafer: accuracy outside 40–90 kg is unknown (fixed, weight-independent parameters).' : null,
                  'PTOL not available: the response surfaces apply to remifentanil only.'] },

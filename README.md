@@ -26,7 +26,7 @@ A browser-based target-controlled infusion (TCI) simulator for propofol and opio
 
 | Drug | Models |
 | --- | --- |
-| Propofol | Eleveld 2018, Schnider, Marsh, modified Marsh (ke0 1.2), Paedfusor, Kataria |
+| Propofol | Eleveld 2018, Schnider, Marsh, modified Marsh (ke0 1.21), Paedfusor, Kataria |
 | Remifentanil | Minto, Eleveld 2017 |
 | Fentanyl | Shafer 1990 (ke0 Scott–Stanski), Scott–Stanski 1987 |
 | Sufentanil | Gepts |
