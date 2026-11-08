@@ -13,6 +13,7 @@ A browser-based target-controlled infusion (TCI) simulator for propofol and opio
 - Predicted BIS (Bouillon 2004 interaction model)
 - Decrement time to a chosen propofol Ce (wake-up threshold)
 - Table of the model parameters computed for the current patient
+- CSV export of the whole simulation at 0.5-s resolution, saved as `YYYY-MM-DD.csv` (today's date)
 - Warnings when a model is used outside its covariate range (age, BMI)
 
 ## Models
@@ -21,12 +22,21 @@ A browser-based target-controlled infusion (TCI) simulator for propofol and opio
 | --- | --- |
 | Propofol | Eleveld 2018, Schnider, Marsh, modified Marsh (ke0 1.2), Paedfusor, Kataria |
 | Remifentanil | Minto, Eleveld 2017 |
+| Fentanyl | Shafer 1990 (ke0 Scott–Stanski), Scott–Stanski 1987 |
 | Sufentanil | Gepts |
 | Alfentanil | Maitre |
 
 ## Algorithm
 
-Three-compartment mammillary model with an effect compartment, solved exactly with a matrix exponential at 2-s steps. In effect-site mode the infusion rate at each step is the highest rate that keeps the predicted Ce at or below target over the next 20 minutes (a Shafer–Gregg-type approach), capped by the maximum pump rate. In plasma mode the rate brings the predicted Cp to target at the end of each step.
+Three-compartment mammillary model with an effect compartment, solved exactly with a matrix exponential at 0.5-s steps. The infusion rate is updated every 2 s. In effect-site mode the rate at each update is the highest rate that keeps the predicted Ce at or below target over the next 20 minutes (a Shafer–Gregg-type approach), capped by the maximum pump rate. In plasma mode the rate brings the predicted Cp to target at the end of each 2-s interval.
+
+## CSV export
+
+The **⬇ CSV** button saves the simulation from time 0 to now, one row every 0.5 s, as `YYYY-MM-DD.csv`. Lines starting with `#` hold the patient, models, drug concentrations and pump limit; read the file with `pandas.read_csv(f, comment='#')` or `read.csv(f, comment.char = '#')` in R.
+
+Columns, for each drug: target, mode (`ce`/`cp`), Cp, Ce, rate (mL/h and amount/min) and cumulative dose, with units in the column names; then `ptol_bouillon`, `ptol_kern` (empty unless the opioid is remifentanil) and `bis_bouillon`. Concentrations are at the end of each step; rates are those delivered during the preceding 0.5 s.
+
+Changing the patient or a model restarts the simulation and clears the log, so export first.
 
 ## Interaction models
 
@@ -42,6 +52,7 @@ Both surfaces were estimated with Schnider (propofol) and Minto (remifentanil) c
 - Eleveld DJ et al. Br J Anaesth 2018;120:942–59.
 - Absalom A et al. Br J Anaesth 2003;91:507–13 (Paedfusor). Kataria BK et al. Anesthesiology 1994;80:104–22. Muñoz HR et al. Anesthesiology 2004;101:1269–74 (paediatric ke0).
 - Minto CF et al. Anesthesiology 1997;86:10–23. Eleveld DJ et al. Anesthesiology 2017;126:1005–18.
+- Shafer SL et al. Anesthesiology 1990;73:1091–102. Scott JC, Stanski DR. J Pharmacol Exp Ther 1987;240:159–66 (fentanyl, ke0 0.147/min).
 - Gepts E et al. Anesthesiology 1995;83:1194–204. Maitre PO et al. Anesthesiology 1987;66:3–12.
 - Bouillon TW et al. Anesthesiology 2004;100:1353–72. Kern SE et al. Anesthesiology 2004;100:1373–81.
 

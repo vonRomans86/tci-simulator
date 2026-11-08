@@ -88,6 +88,8 @@ details summary{cursor:pointer;font-weight:600;font-size:14px}
     <button data-j="5" class="jump">+5′</button>
     <button data-j="15" class="jump">+15′</button>
     <button id="reset">Reset</button>
+    <button id="csv">⬇ CSV</button>
+    <span class="note" id="csvmsg" style="margin:0"></span>
   </div></div>
 
   <div class="grid side">
@@ -184,7 +186,7 @@ details summary{cursor:pointer;font-weight:600;font-size:14px}
         <details>
           <summary>Model parameters for this patient</summary>
           <div style="overflow-x:auto;margin-top:8px"><table id="ptab"></table></div>
-          <div class="note">Volumes in L, clearances in L/min, ke0 in min⁻¹. Algorithm: 2-s step; in effect-site mode the rate is the highest that keeps the predicted Ce at or below target over the next 20 minutes (Shafer–Gregg-type approach), capped by the maximum pump rate.</div>
+          <div class="note">Volumes in L, clearances in L/min, ke0 in min⁻¹. Algorithm: exact integration at 0.5-s steps, infusion rate updated every 2 s; in effect-site mode the rate is the highest that keeps the predicted Ce at or below target over the next 20 minutes (Shafer–Gregg-type approach), capped by the maximum pump rate.</div>
         </details>
       </section>
 
@@ -197,6 +199,7 @@ details summary{cursor:pointer;font-weight:600;font-size:14px}
             <li><b>Eleveld propofol</b>: Eleveld DJ et al. Br J Anaesth 2018;120:942–59 (arterial samples, arterial ke0). FFM by Al-Sallami.</li>
             <li><b>Paedfusor</b>: Absalom A et al. Br J Anaesth 2003;91:507–13. <b>Kataria</b>: Kataria BK et al. Anesthesiology 1994;80:104–22. Paediatric ke0 (0.91 and 0.41/min): Muñoz HR et al. Anesthesiology 2004;101:1269–74.</li>
             <li><b>Minto</b>: Minto CF et al. Anesthesiology 1997;86:10–23. <b>Eleveld remifentanil</b>: Eleveld DJ et al. Anesthesiology 2017;126:1005–18.</li>
+            <li><b>Fentanyl</b>: Shafer SL et al. Anesthesiology 1990;73:1091–102 (V1 6.09 L), with ke0 0.147/min from Scott JC, Stanski DR. J Pharmacol Exp Ther 1987;240:159–66, as implemented at opentci.org; Scott–Stanski 1987 PK (V1 13.0 L) with the same ke0.</li>
             <li><b>Gepts</b> (sufentanil): Gepts E et al. Anesthesiology 1995;83:1194–204. <b>Maitre</b> (alfentanil): Maitre PO et al. Anesthesiology 1987;66:3–12.</li>
             <li><b>PTOL Bouillon</b>: Bouillon TW et al. Anesthesiology 2004;100:1353–72; hierarchical model parameters as in Hannivoort LN et al. (Ce50 propofol 8.48 µg/mL, Ce50 remifentanil 1.16 ng/mL, γ 3.46), as used by van den Berg JP et al. J Clin Monit Comput 2021;35:815–25.</li>
             <li><b>PTOL Kern</b>: Kern SE et al. Anesthesiology 2004;100:1373–81, Greco model (C50 propofol 5.6 µg/mL, C50 remifentanil 48.9 ng/mL, slope 2.2, α 33.2), as reported by Johnson KB et al. Anesth Analg 2010.</li>
@@ -212,9 +215,11 @@ details summary{cursor:pointer;font-weight:600;font-size:14px}
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
-const DT = 2/60;              // simulation step: 2 s, in minutes
-const HORIZON = 600;          // 600 steps = 20-min look-ahead for effect-site control
-const REC_EVERY = 5;          // record history every 10 s
+const DT = 0.5/60;            // integration and export step: 0.5 s, in minutes
+const CTRL_EVERY = 4;         // the controller updates the rate every 4 steps (2 s)
+const DTC = DT*CTRL_EVERY;    // control interval, in minutes
+const HORIZON = 600;          // 600 control intervals = 20-min look-ahead for effect-site control
+const REC_EVERY = 20;         // chart history every 10 s
 
 /* ---------- covariates ---------- */
 function james(sex, w, h){ return sex === 'M' ? 1.1*w - 128*(w/h)**2 : 1.07*w - 148*(w/h)**2; }
@@ -233,6 +238,7 @@ const DRUGS = {
   propofol:     { label:'Propofol',     cu:'µg/mL', amt:'mg', concs:[10,20],     concU:'mg/mL', step:0.5,  def:4,    max:15 },
   remifentanil: { label:'Remifentanil', cu:'ng/mL', amt:'µg', concs:[50,40,20,10], concU:'µg/mL', step:0.5,  def:3,    max:25 },
   sufentanil:   { label:'Sufentanil',   cu:'ng/mL', amt:'µg', concs:[5,1],       concU:'µg/mL', step:0.05, def:0.3,  max:3 },
+  fentanyl:     { label:'Fentanyl',     cu:'ng/mL', amt:'µg', concs:[50,10],     concU:'µg/mL', step:0.5,  def:2,    max:20 },
   alfentanil:   { label:'Alfentanil',   cu:'ng/mL', amt:'µg', concs:[500,100],   concU:'µg/mL', step:10,   def:80,   max:600 }
 };
 
@@ -310,6 +316,16 @@ const MODELS = {
       return { V1, V2, V3, CL1, CL2, CL3, ke0: 1.09*fag(-0.0289) };
     },
     check: p => [] },
+  shaferF: { drug:'fentanyl', name:'Fentanyl · Shafer 1990 (ke0 Scott–Stanski)',
+    build: p => fromK(6.09, {k10:0.083,k12:0.471,k13:0.225,k21:0.102,k31:0.006}, 0.147),
+    check: p => [p.age < 18 ? 'Shafer: adult model.' : null,
+                 p.w < 40 || p.w > 90 ? 'Shafer: accuracy outside 40–90 kg is unknown (fixed, weight-independent parameters).' : null,
+                 'PTOL not available: the response surfaces apply to remifentanil only.'] },
+  scottF: { drug:'fentanyl', name:'Fentanyl · Scott–Stanski 1987',
+    build: p => fromK(13.0, {k10:0.0492,k12:0.380,k13:0.179,k21:0.0960,k31:0.0077}, 0.147),
+    check: p => [p.age < 18 ? 'Scott–Stanski: adult model.' : null,
+                 'Fixed, weight-independent parameters.',
+                 'PTOL not available: the response surfaces apply to remifentanil only.'] },
   gepts: { drug:'sufentanil', name:'Sufentanil · Gepts',
     build: p => fromK(14.3, {k10:0.0645,k12:0.1086,k13:0.0229,k21:0.0245,k31:0.0013}, 0.112),
     check: p => [p.age < 18 ? 'Gepts: adult model.' : null,
@@ -325,7 +341,7 @@ const MODELS = {
                  'PTOL not available: the response surfaces apply to remifentanil only.'] }
 };
 const H_MODELS = ['eleveld','schnider','marsh','marshmod','paedfusor','kataria'];
-const O_MODELS = ['minto','eleveldR','gepts','maitre'];
+const O_MODELS = ['minto','eleveldR','shaferF','scottF','gepts','maitre'];
 
 /* ---------- linear algebra ---------- */
 function matMul(A, B){
@@ -361,46 +377,52 @@ class Channel {
       [k13, 0, -k31, 0, 0],
       [ke0/V1, 0, 0, -ke0, 0],
       [0,0,0,0,0]
-    ].map(r => r.map(v => v*DT));
-    const E5 = expm(A);
-    this.E = E5.slice(0,4).map(r => r.slice(0,4));
-    this.G = E5.slice(0,4).map(r => r[4]);
-    // effect-site response to 1 unit/min for one step, then stop
+    ];
+    const disc = dt => { const E5 = expm(A.map(r => r.map(v => v*dt)));
+      return [E5.slice(0,4).map(r => r.slice(0,4)), E5.slice(0,4).map(r => r[4])]; };
+    [this.E, this.G] = disc(DT);      // 0.5-s step (integration and export)
+    [this.Ec, this.Gc] = disc(DTC);   // 2-s step (controller)
+    // effect-site response to 1 unit/min for one control interval, then stop
     this.unitCe = new Float64Array(HORIZON);
-    let y = this.G.slice();
-    for (let k=0;k<HORIZON;k++){ this.unitCe[k] = y[3]; y = this.mv(y); }
+    let y = this.Gc.slice();
+    for (let k=0;k<HORIZON;k++){ this.unitCe[k] = y[3]; y = this.mvc(y); }
     this.valid = [V1,V2,V3,CL1,CL2,CL3,ke0].every(v => isFinite(v) && v > 0);
     this.reset();
   }
   mv(x){ const E = this.E; return [0,1,2,3].map(i => E[i][0]*x[0] + E[i][1]*x[1] + E[i][2]*x[2] + E[i][3]*x[3]); }
+  mvc(x){ const E = this.Ec; return [0,1,2,3].map(i => E[i][0]*x[0] + E[i][1]*x[1] + E[i][2]*x[2] + E[i][3]*x[3]); }
   reset(){ this.x = [0,0,0,0]; this.amount = 0; this.rate = 0; this.hist = []; this.lastAmt = 0; this.lastT = 0; this.avgMlh = 0; }
   get cp(){ return this.x[0]/this.P.V1; }
   get ce(){ return this.x[3]; }
-  step(target, conc, maxMlh){
+  control(target, conc, maxMlh){
+    // rate held constant over the next 2-s control interval
     if (!this.valid){ this.rate = 0; return; }
     const rmax = maxMlh/60*conc;          // amount/min
     let r = 0;
     if (target > 0){
       if (this.mode === 'cp'){
-        const free = this.mv(this.x)[0]/this.P.V1, unit = this.G[0]/this.P.V1;
+        const free = this.mvc(this.x)[0]/this.P.V1, unit = this.Gc[0]/this.P.V1;
         r = (target - free)/unit;
       } else {
         r = Infinity; let y = this.x;
         for (let k=0;k<HORIZON;k++){
-          y = this.mv(y); const u = this.unitCe[k];
+          y = this.mvc(y); const u = this.unitCe[k];
           if (u > 1e-12){ const v = (target - y[3])/u; if (v < r) r = v; }
         }
       }
     }
-    r = Math.min(Math.max(r, 0), rmax);
-    const nx = this.mv(this.x);
+    this.rate = Math.min(Math.max(r, 0), rmax);
+  }
+  step(){
+    if (!this.valid) return;
+    const r = this.rate, nx = this.mv(this.x);
     for (let i=0;i<4;i++) nx[i] += this.G[i]*r;
-    this.x = nx; this.rate = r; this.amount += r*DT;
+    this.x = nx; this.amount += r*DT;
   }
   timeToCe(thr){
     if (this.ce <= thr) return 0;
     let y = this.x;
-    for (let k=1;k<=18000;k++){ y = this.mv(y); if (y[3] <= thr) return k*DT; }
+    for (let k=1;k<=18000;k++){ y = this.mvc(y); if (y[3] <= thr) return k*DTC; }
     return Infinity;
   }
 }
@@ -452,7 +474,7 @@ function rebuild(){
     if (!ch.valid) w.unshift('Invalid parameters for this patient (volume or clearance ≤ 0): model outside its covariate range.');
     $(el).innerHTML = w.map(s => `<div>⚠︎ ${s}</div>`).join('');
   }
-  t = 0; nstep = 0; acc = 0; record(); renderTable(); dirty = true;
+  t = 0; nstep = 0; acc = 0; record(); startLog(); renderTable(); dirty = true;
 }
 function record(){
   for (const ch of [H,O]){
@@ -464,11 +486,73 @@ function record(){
 }
 function concOf(ch){ return +$(ch.prefix+'-conc').value || ch.drug.concs[0]; }
 function simStep(){
-  H.step(targets.h, concOf(H), +$('maxrate').value || 1200);
-  O.step(targets.o, concOf(O), +$('maxrate').value || 1200);
+  if (nstep % CTRL_EVERY === 0){
+    const mx = +$('maxrate').value || 1200;
+    H.control(targets.h, concOf(H), mx);
+    O.control(targets.o, concOf(O), mx);
+  }
+  H.step(); O.step();
   t += DT; nstep++;
+  logRow();
   if (nstep % REC_EVERY === 0) record();
   dirty = true;
+}
+
+/* ---------- CSV export (one row every 0.5 s) ---------- */
+let log = [], logMeta = null;
+function logRow(){
+  const isRemi = O.m.drug === 'remifentanil';
+  log.push([
+    (t*60).toFixed(1),
+    targets.h, H.mode, H.cp, H.ce, H.rate*60/concOf(H), H.rate, H.amount,
+    targets.o, O.mode, O.cp, O.ce, O.rate*60/concOf(O), O.rate, O.amount,
+    isRemi ? PTOL.bouillon.p(H.ce, O.ce) : '', isRemi ? PTOL.kern.p(H.ce, O.ce) : '',
+    bisBouillon(H.ce, isRemi ? O.ce : 0)
+  ]);
+}
+function startLog(){
+  log = [];
+  logMeta = { hModel: H.m.name, oModel: O.m.name, pt: { ...pt } };
+  logRow();
+}
+function todayName(){
+  const d = new Date(), z = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}.csv`;
+}
+function buildCSV(){
+  const hn = H.drug.label.toLowerCase(), on = O.drug.label.toLowerCase();
+  const hu = H.drug.cu.replace('µ','u').replace('/','_'), ou = O.drug.cu.replace('µ','u').replace('/','_');
+  const ha = H.drug.amt.replace('µ','u'), oa = O.drug.amt.replace('µ','u');
+  const p = logMeta.pt;
+  const meta = [
+    '# TCI Simulator export',
+    `# exported: ${new Date().toISOString()}`,
+    `# patient: age ${p.age} y, sex ${p.sex}, weight ${p.w} kg, height ${p.h} cm, BMI ${p.bmi.toFixed(1)}, LBM (James) ${p.lbm.toFixed(1)} kg, FFM (Al-Sallami) ${p.ffm.toFixed(1)} kg`,
+    `# hypnotic model: ${logMeta.hModel}; concentration ${concOf(H)} ${H.drug.concU}`,
+    `# opioid model: ${logMeta.oModel}; concentration ${concOf(O)} ${O.drug.concU}`,
+    `# max pump rate: ${+$('maxrate').value || 1200} mL/h`,
+    '# time step 0.5 s; concentrations at the end of each step; rates are those delivered during the preceding 0.5 s; rate updated by the controller every 2 s',
+    '# ptol_* and bis are model predictions (Bouillon 2004, Kern 2004); ptol is empty when the opioid is not remifentanil'
+  ];
+  const head = ['time_s',
+    `${hn}_target_${hu}`, `${hn}_mode`, `${hn}_cp_${hu}`, `${hn}_ce_${hu}`, `${hn}_rate_ml_h`, `${hn}_rate_${ha}_min`, `${hn}_cum_dose_${ha}`,
+    `${on}_target_${ou}`, `${on}_mode`, `${on}_cp_${ou}`, `${on}_ce_${ou}`, `${on}_rate_ml_h`, `${on}_rate_${oa}_min`, `${on}_cum_dose_${oa}`,
+    'ptol_bouillon', 'ptol_kern', 'bis_bouillon'];
+  const fmt = v => typeof v === 'number' ? (+v.toPrecision(6)).toString() : v;
+  return meta.join('\n') + '\n' + head.join(',') + '\n' + log.map(r => r.map(fmt).join(',')).join('\n') + '\n';
+}
+function downloadCSV(){
+  const name = todayName();
+  try {
+    const blob = new Blob([buildCSV()], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    $('csvmsg').textContent = `${name} · ${log.length.toLocaleString('en')} rows`;
+  } catch (e) {
+    $('csvmsg').textContent = 'Download not available in this viewer.';
+  }
 }
 
 /* ---------- UI ---------- */
@@ -643,6 +727,7 @@ $('play').addEventListener('click', () => {
   running = !running; last = 0;
   $('play').textContent = running ? '❚❚ Pause' : '▶ Start';
 });
+$('csv').addEventListener('click', downloadCSV);
 $('reset').addEventListener('click', () => { running = false; $('play').textContent = '▶ Start'; rebuild(); });
 $('speed').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
   speed = +b.dataset.s; $('speed').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
