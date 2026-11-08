@@ -2,6 +2,10 @@
 
 A browser-based target-controlled infusion (TCI) simulator for propofol and opioids, with a live display of the probability of tolerance of laryngoscopy (PTOL).
 
+**▶ Try it online: https://vonromans86.github.io/tci-simulator/** (no installation, works on phones)
+
+![TCI Simulator: propofol and remifentanil effect-site targeting with tolerance-of-laryngoscopy isoboles](docs/screenshot.png)
+
 **Teaching and simulation tool only.** Concentrations are population predictions, not measurements. Do not use for clinical decision-making.
 
 ## Features
