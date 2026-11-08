@@ -1,5 +1,7 @@
 # TCI Simulator
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24058642.svg)](https://doi.org/10.5281/zenodo.24058642) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A browser-based target-controlled infusion (TCI) simulator for propofol and opioids, with a live display of the probability of tolerance of laryngoscopy (PTOL).
 
 **▶ Try it online: https://vonromans86.github.io/tci-simulator/** (no installation, works on phones)
@@ -61,6 +63,12 @@ Both surfaces were estimated with Schnider (propofol) and Minto (remifentanil) c
 - Bouillon TW et al. Anesthesiology 2004;100:1353–72. Kern SE et al. Anesthesiology 2004;100:1373–81.
 
 Propofol (Schnider, Marsh, Eleveld) and remifentanil (Minto, Eleveld) parameters were cross-checked against the open-source Python Anesthesia Simulator (Aubouin-Pairault et al., JOSS 2023).
+
+## How to cite
+
+Romanelli A. *TCI Simulator: multi-model target-controlled infusion simulator with tolerance-of-laryngoscopy isoboles* (v1.0.0). Zenodo; 2026. https://doi.org/10.5281/zenodo.24058642
+
+GitHub's **Cite this repository** button gives the same reference in APA and BibTeX.
 
 ## Usage
 

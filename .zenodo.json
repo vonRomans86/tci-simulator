@@ -5,12 +5,27 @@
   "creators": [
     {
       "name": "Romanelli, Antonio",
-      "affiliation": "AOU San Giovanni di Dio e Ruggi d'Aragona, Salerno, Italy"
+      "affiliation": "AOU San Giovanni di Dio e Ruggi d'Aragona, Salerno, Italy",
+      "orcid": "0000-0002-6895-6485"
     }
   ],
   "license": "MIT",
-  "keywords": ["anesthesia", "target-controlled infusion", "pharmacokinetics", "pharmacodynamics", "propofol", "remifentanil", "fentanyl", "response surface", "medical education"],
+  "keywords": [
+    "anesthesia",
+    "target-controlled infusion",
+    "pharmacokinetics",
+    "pharmacodynamics",
+    "propofol",
+    "remifentanil",
+    "fentanyl",
+    "response surface",
+    "medical education"
+  ],
   "related_identifiers": [
-    {"identifier": "https://vonromans86.github.io/tci-simulator/", "relation": "isDocumentedBy", "resource_type": "software"}
+    {
+      "identifier": "https://vonromans86.github.io/tci-simulator/",
+      "relation": "isDocumentedBy",
+      "resource_type": "software"
+    }
   ]
 }
