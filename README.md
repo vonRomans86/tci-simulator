@@ -66,7 +66,7 @@ Propofol (Schnider, Marsh, Eleveld) and remifentanil (Minto, Eleveld) parameters
 
 ## How to cite
 
-Romanelli A. *TCI Simulator: multi-model target-controlled infusion simulator with tolerance-of-laryngoscopy isoboles* Zenodo; 2026. https://doi.org/10.5281/zenodo.24058641
+Romanelli A. *TCI Simulator: multi-model target-controlled infusion simulator with tolerance-of-laryngoscopy isoboles*. Zenodo; 2026. https://doi.org/10.5281/zenodo.24058641
 
 This DOI always resolves to the latest version. To cite v1.0.0 specifically, use https://doi.org/10.5281/zenodo.24058642.
 
